@@ -1,0 +1,9 @@
+language: go
+go:
+  - 1.x
+sudo: false
+script:
+  - ./test.sh
+notifications:
+  email: false
+
