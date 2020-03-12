@@ -10,6 +10,7 @@ but implemented by printing
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 
 	"golang.org/x/mod/modfile"
@@ -74,6 +75,10 @@ func (p *printer) trim() {
 
 // file formats the given file into the print buffer.
 func (p *printer) file(f *modfile.File) {
+	sort.Slice(f.Require, func(i, j int) bool { return f.Require[i].Mod.Path < f.Require[j].Mod.Path })
+	sort.Slice(f.Exclude, func(i, j int) bool { return f.Exclude[i].Mod.Path < f.Exclude[j].Mod.Path })
+	sort.Slice(f.Replace, func(i, j int) bool { return f.Replace[i].Old.Path < f.Replace[j].Old.Path })
+
 	for _, com := range f.Syntax.Before {
 		p.printf("%s", strings.TrimSpace(com.Token))
 		p.newline()
