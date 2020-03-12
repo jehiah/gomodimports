@@ -90,7 +90,7 @@ func (p *printer) file(f *modfile.File) {
 	p.expr(f.Go.Syntax)
 	p.newline()
 
-	if len(f.Require) > 0 {
+	if len(f.Require) > 1 {
 		p.newline()
 		p.printf("require (")
 		p.margin++
@@ -105,8 +105,16 @@ func (p *printer) file(f *modfile.File) {
 		p.newline()
 		p.printf(")")
 		p.newline()
+	} else if len(f.Require) == 1 {
+		r := f.Require[0]
+		if r.Syntax.InBlock {
+			r.Syntax.Token = append([]string{"require"}, r.Syntax.Token...)
+		}
+		p.newline()
+		p.expr(r.Syntax)
+		p.newline()
 	}
-	if len(f.Exclude) > 0 {
+	if len(f.Exclude) > 1 {
 		p.newline()
 		p.printf("exclude (")
 		p.margin++
@@ -118,8 +126,16 @@ func (p *printer) file(f *modfile.File) {
 		p.newline()
 		p.printf(")")
 		p.newline()
+	} else if len(f.Exclude) == 1 {
+		r := f.Exclude[0]
+		if r.Syntax.InBlock {
+			r.Syntax.Token = append([]string{"exclude"}, r.Syntax.Token...)
+		}
+		p.newline()
+		p.expr(r.Syntax)
+		p.newline()
 	}
-	if len(f.Replace) > 0 {
+	if len(f.Replace) > 1 {
 		p.newline()
 		p.printf("replace (")
 		p.margin++
@@ -133,6 +149,14 @@ func (p *printer) file(f *modfile.File) {
 		p.margin--
 		p.newline()
 		p.printf(")")
+		p.newline()
+	} else if len(f.Replace) == 1 {
+		r := f.Replace[0]
+		if r.Syntax.InBlock {
+			r.Syntax.Token = append([]string{"replace"}, r.Syntax.Token...)
+		}
+		p.newline()
+		p.expr(r.Syntax)
 		p.newline()
 	}
 

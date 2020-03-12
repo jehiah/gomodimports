@@ -7,6 +7,5 @@ require (
 	vcs.com/pkg/testing v1.5.1
 )
 
-replace (
-	vcs.com/pkg/testing => ../testing
-)
+// comment about pkg/testing
+replace vcs.com/pkg/testing => ../testing
