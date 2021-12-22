@@ -38,6 +38,16 @@ func (p *printer) indent() int {
 	return n
 }
 
+func filterIndirect(r []*modfile.Require, indirect bool) []*modfile.Require {
+	var o []*modfile.Require
+	for _, rr := range r {
+		if rr.Indirect == indirect {
+			o = append(o, rr)
+		}
+	}
+	return o
+}
+
 // newline ends the current line, flushing end-of-line comments.
 func (p *printer) newline() {
 	if len(p.comment) > 0 {
@@ -73,11 +83,71 @@ func (p *printer) trim() {
 	p.Truncate(n)
 }
 
+func (p *printer) printBlock(prefix string, numberItems int, items interface{}) {
+	if numberItems > 1 {
+		p.newline()
+		p.printf(prefix + " (")
+		p.margin++
+	}
+	switch items := items.(type) {
+	case []*modfile.Require:
+		for _, i := range items {
+			if i.Syntax.InBlock && len(items) == 1 {
+				i.Syntax.Token = append([]string{prefix}, i.Syntax.Token...)
+			} else if !i.Syntax.InBlock && len(items) != 1 {
+				i.Syntax.Token = i.Syntax.Token[1:len(i.Syntax.Token)]
+			}
+			p.newline()
+			p.expr(i.Syntax)
+		}
+	case []*modfile.Replace:
+		for _, i := range items {
+			if i.Syntax.InBlock && len(items) == 1 {
+				i.Syntax.Token = append([]string{prefix}, i.Syntax.Token...)
+			} else if !i.Syntax.InBlock && len(items) != 1 {
+				i.Syntax.Token = i.Syntax.Token[1:len(i.Syntax.Token)]
+			}
+			p.newline()
+			p.expr(i.Syntax)
+		}
+	case []*modfile.Exclude:
+		for _, i := range items {
+			if i.Syntax.InBlock && len(items) == 1 {
+				i.Syntax.Token = append([]string{prefix}, i.Syntax.Token...)
+			} else if !i.Syntax.InBlock && len(items) != 1 {
+				i.Syntax.Token = i.Syntax.Token[1:len(i.Syntax.Token)]
+			}
+			p.newline()
+			p.expr(i.Syntax)
+		}
+	case []*modfile.Retract:
+		for _, i := range items {
+			if i.Syntax.InBlock && len(items) == 1 {
+				i.Syntax.Token = append([]string{prefix}, i.Syntax.Token...)
+			} else if !i.Syntax.InBlock && len(items) != 1 {
+				i.Syntax.Token = i.Syntax.Token[1:len(i.Syntax.Token)]
+			}
+			p.newline()
+			p.expr(i.Syntax)
+		}
+	}
+	if numberItems > 1 {
+		p.margin--
+		p.newline()
+		p.printf(")")
+		p.newline()
+	} else if numberItems == 1 {
+		p.newline()
+	}
+
+}
+
 // file formats the given file into the print buffer.
 func (p *printer) file(f *modfile.File) {
 	sort.Slice(f.Require, func(i, j int) bool { return f.Require[i].Mod.Path < f.Require[j].Mod.Path })
 	sort.Slice(f.Exclude, func(i, j int) bool { return f.Exclude[i].Mod.Path < f.Exclude[j].Mod.Path })
 	sort.Slice(f.Replace, func(i, j int) bool { return f.Replace[i].Old.Path < f.Replace[j].Old.Path })
+	sort.Slice(f.Retract, func(i, j int) bool { return f.Retract[i].Low < f.Retract[j].Low })
 
 	for _, com := range f.Syntax.Before {
 		p.printf("%s", strings.TrimSpace(com.Token))
@@ -89,76 +159,13 @@ func (p *printer) file(f *modfile.File) {
 	p.newline()
 	p.expr(f.Go.Syntax)
 	p.newline()
+	direct, indirect := filterIndirect(f.Require, false), filterIndirect(f.Require, true)
 
-	if len(f.Require) > 1 {
-		p.newline()
-		p.printf("require (")
-		p.margin++
-		for _, r := range f.Require {
-			if !r.Syntax.InBlock {
-				r.Syntax.Token = r.Syntax.Token[1:len(r.Syntax.Token)]
-			}
-			p.newline()
-			p.expr(r.Syntax)
-		}
-		p.margin--
-		p.newline()
-		p.printf(")")
-		p.newline()
-	} else if len(f.Require) == 1 {
-		r := f.Require[0]
-		if r.Syntax.InBlock {
-			r.Syntax.Token = append([]string{"require"}, r.Syntax.Token...)
-		}
-		p.newline()
-		p.expr(r.Syntax)
-		p.newline()
-	}
-	if len(f.Exclude) > 1 {
-		p.newline()
-		p.printf("exclude (")
-		p.margin++
-		for _, r := range f.Exclude {
-			p.newline()
-			p.expr(r.Syntax)
-		}
-		p.margin--
-		p.newline()
-		p.printf(")")
-		p.newline()
-	} else if len(f.Exclude) == 1 {
-		r := f.Exclude[0]
-		if r.Syntax.InBlock {
-			r.Syntax.Token = append([]string{"exclude"}, r.Syntax.Token...)
-		}
-		p.newline()
-		p.expr(r.Syntax)
-		p.newline()
-	}
-	if len(f.Replace) > 1 {
-		p.newline()
-		p.printf("replace (")
-		p.margin++
-		for _, r := range f.Replace {
-			if !r.Syntax.InBlock {
-				r.Syntax.Token = r.Syntax.Token[1:len(r.Syntax.Token)]
-			}
-			p.newline()
-			p.expr(r.Syntax)
-		}
-		p.margin--
-		p.newline()
-		p.printf(")")
-		p.newline()
-	} else if len(f.Replace) == 1 {
-		r := f.Replace[0]
-		if r.Syntax.InBlock {
-			r.Syntax.Token = append([]string{"replace"}, r.Syntax.Token...)
-		}
-		p.newline()
-		p.expr(r.Syntax)
-		p.newline()
-	}
+	p.printBlock("require", len(direct), direct)
+	p.printBlock("require", len(indirect), indirect)
+	p.printBlock("exclude", len(f.Exclude), f.Exclude)
+	p.printBlock("replace", len(f.Replace), f.Replace)
+	p.printBlock("retract", len(f.Retract), f.Retract)
 
 }
 

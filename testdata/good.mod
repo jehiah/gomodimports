@@ -7,5 +7,7 @@ require (
 	vcs.com/pkg/testing v1.5.1
 )
 
+require vcs.com/pkg/testing/b v1.5.1 // indirect
+
 // comment about pkg/testing
 replace vcs.com/pkg/testing => ../testing
