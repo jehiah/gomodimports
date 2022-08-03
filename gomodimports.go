@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,8 +12,9 @@ import (
 )
 
 func main() {
-	f := flag.String("f", "", "filename")
+	f := flag.String("f", "", "path to go.mod")
 	w := flag.Bool("w", false, "overwrite source file")
+	l := flag.Bool("l", false, "list files whose formatting differs")
 	flag.Parse()
 	b, err := ioutil.ReadFile(*f)
 	if err != nil {
@@ -25,7 +27,11 @@ func main() {
 
 	p := &printer{}
 	p.file(mf)
-	if *w {
+	if *l {
+		if !bytes.Equal(p.Bytes(), b) {
+			fmt.Println(*f)
+		}
+	} else if *w {
 		of, err := os.Create(*f)
 		if err != nil {
 			log.Fatal(err)
