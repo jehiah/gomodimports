@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -16,7 +15,7 @@ func main() {
 	w := flag.Bool("w", false, "overwrite source file")
 	l := flag.Bool("l", false, "list files whose formatting differs")
 	flag.Parse()
-	b, err := ioutil.ReadFile(*f)
+	b, err := os.ReadFile(*f)
 	if err != nil {
 		log.Fatal(err)
 	}
