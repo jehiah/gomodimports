@@ -1,5 +1,7 @@
 module github.com/jehiah/gomodimports
 
-go 1.21
+go 1.23.0
 
-require golang.org/x/mod v0.16.0
+toolchain go1.24.1
+
+require golang.org/x/mod v0.24.0
